@@ -2,28 +2,28 @@ var WattsHistory = require('../models/wattshistory.js');
 
 var ticks = {};
 
-function route(req, res)
+function route(datas, client)
 {
-	if(!ticks[req.params.type])
+	if(!ticks[datas.type])
 	{
-		ticks[req.params.type] = 0;
+		ticks[datas.type] = 0;
 	}
 
-	++ticks[req.params.type];
-	res.send('' + ticks[req.params.type]);
+	ticks[datas.type] += parseInt(datas.watts);
+	client.write('' + ticks[datas.type]);
 }
 
 function init()
 {
 	setInterval(function()
+	{
+		for(var type in ticks)
 		{
-			for(var type in ticks)
-			{
-				WattsHistory.createEntry(ticks[type], type);
-				console.log((ticks[type] + ' for ' + type + ' saved.').blue);
-				ticks[type] = 0;
-			}
-		}, 30000);
+			WattsHistory.createEntry(ticks[type], type);
+			console.log((ticks[type] + ' for ' + type + ' saved.').blue);
+			ticks[type] = 0;
+		}
+	}, 30000);
 }
 
 module.exports = { route, init };
