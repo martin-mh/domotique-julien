@@ -19,9 +19,12 @@ function init()
 	{
 		for(var type in ticks)
 		{
-			WattsHistory.createEntry(ticks[type], type);
-			console.log((ticks[type] + ' for ' + type + ' saved.').blue);
-			ticks[type] = 0;
+			if(ticks[type] !== 0)
+			{
+				WattsHistory.createEntry(ticks[type], type);
+				console.log((ticks[type] + ' for ' + type + ' saved.').blue);
+				ticks[type] = 0;
+			}
 		}
 	}, 30000);
 }

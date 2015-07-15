@@ -12,10 +12,19 @@ int const carWattsInterrupt = 3;
 int const globalWattsPin = 21;
 int const globalWattsInterrupt = 2;
 
+int const mainHeaterPin = 22;
+int const kitchenHeaterPin = 23;
+int const firstLivingRoomHeaterPin = 24;
+int const officeHeaterPin = 25;
+int const secondLivingRoomHeaterPin = 26;
+int const firstBedroomHeaterPin = 27;
+int const secondBedroomHeaterPin = 28;
+int const waterHeaterPin = 29;
+
 EthernetClient client;
 
-volatile int carWatts = 0;
-volatile int globalWatts = 0;
+/*volatile int carWatts = 0;
+volatile int globalWatts = 0;*/
 
 void setup()
 {
@@ -25,36 +34,101 @@ void setup()
   pinMode(globalWattsPin, INPUT_PULLUP);
   attachInterrupt(carWattsInterrupt, incrementCarWattsCounter, FALLING);
   attachInterrupt(globalWattsInterrupt, incrementGlobalWattsCounter, FALLING);
+
+  pinMode(mainHeaterPin, OUTPUT);
+  pinMode(kitchenHeaterPin, OUTPUT);
+  pinMode(firstLivingRoomHeaterPin, OUTPUT);
+  pinMode(officeHeaterPin, OUTPUT);
+  pinMode(secondLivingRoomHeaterPin, OUTPUT);
+  pinMode(firstBedroomHeaterPin, OUTPUT);
+  pinMode(secondBedroomHeaterPin, OUTPUT);
+  pinMode(waterHeaterPin, OUTPUT);
+
+  digitalWrite(mainHeaterPin, HIGH);
+
+  client.connect(server, serverPort);
 }
 
 void addTicks(String type, int ticks)
 {
+  StaticJsonBuffer<200> jsonBuffer;
+  JsonObject& root = jsonBuffer.createObject();
+  root["path"] = "/watts/addTick";
+  root["type"] = type.c_str();
+  root["watts"] = ticks;
+
+  root.printTo(client);
+  client.println('\0');
+}
+
+void verifyConnection()
+{
   if(!client.connected())
   {
+    client.stop();
+
     if(!client.connect(server, serverPort))
     {
       return;
     }
   }
-
-  StaticJsonBuffer<200> jsonBuffer;
-  JsonObject& root = jsonBuffer.createObject();
-  root["path"] = "/watts/addTick";
-  root["type"] = type;
-  root["watts"] = ticks;
-
-  root.printTo(client);
 }
 
-void loop()
+void verifyNewMessages()
 {
-  delay(20000);
+  String receivedMessage;
 
-  if(client.available())
+  while(client.available())
   {
-    client.flush();
+    char letter = client.read();
+    
+    if(letter == '\0')
+    {
+      break;
+    }
+
+    receivedMessage += letter;
   }
 
+  proccessMessage(receivedMessage);
+}
+
+void changeHeater(JsonObject& root)
+{
+  bool status = root["status"].as<bool>();
+  const char * heater = root["heater"].asString();
+  
+  if(heater == "kitchenHeater")
+    digitalWrite(kitchenHeaterPin, status);
+  else if(heater == "firstLivingRoomHeater")
+    digitalWrite(firstLivingRoomHeaterPin, status);
+  else if(heater == "officeHeater")
+    digitalWrite(officeHeaterPin, status);
+  else if(heater == "secondLivingRoomHeater")
+    digitalWrite(secondLivingRoomHeaterPin, status);
+  else if(heater == "firstBedroomHeater")
+    digitalWrite(firstBedroomHeaterPin, status);
+  else if(heater == "secondBedroomHeater")
+    digitalWrite(secondBedroomHeaterPin, status);
+  else if(heater == "waterHeater")
+    digitalWrite(waterHeaterPin, status);
+}
+
+void proccessMessage(String message)
+{
+  StaticJsonBuffer<200> jsonBuffer;
+  char jsonMessage[message.length()];
+  message.toCharArray(jsonMessage, message.length());
+  JsonObject& root = jsonBuffer.parseObject(jsonMessage);
+
+  if(root["path"] == "/changeHeater")
+  {
+    changeHeater(root);
+  }
+}
+
+/*void verifyWatts()
+{
   int _carWatts = carWatts;
   carWatts -= _carWatts;
 
@@ -70,6 +144,15 @@ void loop()
   {
     addTicks("global", _globalWatts);
   }
+}*/
+
+void loop()
+{
+  delay(20);
+  verifyConnection();
+
+  /*verifyWatts();*/
+  verifyNewMessages();
 }
 
 void incrementCarWattsCounter()
@@ -77,7 +160,7 @@ void incrementCarWattsCounter()
   if(digitalRead(carWattsPin) != LOW)
     return;
     
-  ++carWatts;
+  addTicks("car", 1);
 }
 
 void incrementGlobalWattsCounter()
@@ -85,5 +168,17 @@ void incrementGlobalWattsCounter()
   if(digitalRead(globalWattsPin) != LOW)
     return;
     
-  ++globalWatts;
+  addTicks("global", 1);
 }
+
+
+
+
+
+
+
+
+
+
+
+

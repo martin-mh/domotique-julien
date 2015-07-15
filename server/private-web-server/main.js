@@ -5,8 +5,9 @@ var Json = require('./../utils/json.js');
 var status = new EventEmitter();
 
 var Watts = require('./watts.js');
+var Heater = require('./heater.js');
 
-//expressApp.get('/watts/addTick/:type/:count', Watts.route);
+var client;
 
 function proccessMessage(message, c)
 {
@@ -29,6 +30,8 @@ function start()
 {
 	var server = tcp.createServer(function(c)
 	{
+		client = c;
+
 		console.log('Client connected!');
 
 		c.setEncoding('utf8');
@@ -65,4 +68,9 @@ function start()
 	server.on
 }
 
-module.exports = { start, status }
+function changeHeater(name, status)
+{
+	Heater.change(name, status, client);
+}
+
+module.exports = { start, status, changeHeater }
