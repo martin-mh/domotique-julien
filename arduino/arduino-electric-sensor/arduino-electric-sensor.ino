@@ -29,7 +29,7 @@ volatile int globalWatts = 0;*/
 void setup()
 {
   Ethernet.begin(mac, ip);
-
+  Serial.begin(9600);
   pinMode(carWattsPin, INPUT_PULLUP);
   pinMode(globalWattsPin, INPUT_PULLUP);
   attachInterrupt(carWattsInterrupt, incrementCarWattsCounter, FALLING);
@@ -98,34 +98,36 @@ void changeHeater(JsonObject& root)
   bool status = root["status"].as<bool>();
   const char * heater = root["heater"].asString();
   
-  if(heater == "kitchenHeater")
+  if(String(heater) == "kitchenHeater")
     digitalWrite(kitchenHeaterPin, status);
-  else if(heater == "firstLivingRoomHeater")
+  else if(String(heater) == "firstLivingRoomHeater")
     digitalWrite(firstLivingRoomHeaterPin, status);
-  else if(heater == "officeHeater")
+  else if(String(heater) == "officeHeater")
     digitalWrite(officeHeaterPin, status);
-  else if(heater == "secondLivingRoomHeater")
+  else if(String(heater) == "secondLivingRoomHeater")
     digitalWrite(secondLivingRoomHeaterPin, status);
-  else if(heater == "firstBedroomHeater")
+  else if(String(heater) == "firstBedroomHeater")
     digitalWrite(firstBedroomHeaterPin, status);
-  else if(heater == "secondBedroomHeater")
+  else if(String(heater) == "secondBedroomHeater")
     digitalWrite(secondBedroomHeaterPin, status);
-  else if(heater == "waterHeater")
+  else if(String(heater) == "waterHeater")
     digitalWrite(waterHeaterPin, status);
 }
 
 void proccessMessage(String message)
 {
   StaticJsonBuffer<200> jsonBuffer;
-  char jsonMessage[message.length()];
-  message.toCharArray(jsonMessage, message.length());
-  JsonObject& root = jsonBuffer.parseObject(jsonMessage);
 
-  if(root["path"] == "/changeHeater")
+  char jsonMessage[200];
+  message.toCharArray(jsonMessage, 200);
+  
+  JsonObject& root = jsonBuffer.parseObject(jsonMessage);
+  
+  if(String(root["path"].asString()) == "/changeHeater")
   {
     changeHeater(root);
   }
-}
+ }
 
 /*void verifyWatts()
 {
@@ -170,15 +172,3 @@ void incrementGlobalWattsCounter()
     
   addTicks("global", 1);
 }
-
-
-
-
-
-
-
-
-
-
-
-
