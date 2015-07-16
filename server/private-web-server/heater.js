@@ -1,3 +1,7 @@
+/*
+ * This permit you to change heaters status.
+ */
+
 var json = require('../utils/json');
 
 function change(name, status, client)

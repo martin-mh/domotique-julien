@@ -1,3 +1,8 @@
+/*
+ * This receive the watts impulsion and save them into MongoDB in order to
+ * monitor the electric consomation
+ */
+
 var WattsHistory = require('../models/wattshistory.js');
 
 var ticks = {};

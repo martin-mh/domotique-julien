@@ -4,6 +4,7 @@ var Json = require('./../utils/json.js');
 
 var status = new EventEmitter();
 
+var Ping = require('./ping.js'); var pingLatency; // Date
 var Watts = require('./watts.js');
 var Heater = require('./heater.js');
 
@@ -24,6 +25,11 @@ function proccessMessage(message, c)
 	{
 		Watts.route(message, c);
 	}
+
+	else if(message.path == '/ping')
+	{
+		Ping.route(message, pingLatency, c);
+	}
 }
 
 function start()
@@ -32,13 +38,21 @@ function start()
 	{
 		client = c;
 
-		console.log('Client connected!');
-
 		c.setEncoding('utf8');
 		c.lastMessage = '';
 
+		sendPing();
+
+		console.log('Client connected!');
+
+		var verifyPing = setInterval(function()
+		{
+			sendPing();
+		}, 30000);
+
 		c.on('end', function()
 		{
+			clearInterval(verifyPing);
 			console.log('Client disconnected!');
 		});
 
@@ -71,6 +85,16 @@ function start()
 function changeHeater(name, status)
 {
 	Heater.change(name, status, client);
+	setTimeout(function()
+	{
+		sendPing();
+	}, 500);
 }
 
-module.exports = { start, status, changeHeater }
+function sendPing()
+{
+	client.write(Json.stringify({ path: '/ping' }));
+	pingLatency = Date.now();
+}
+
+module.exports = { start, status, changeHeater };

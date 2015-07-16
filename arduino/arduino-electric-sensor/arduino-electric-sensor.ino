@@ -21,6 +21,15 @@ int const firstBedroomHeaterPin = 27;
 int const secondBedroomHeaterPin = 28;
 int const waterHeaterPin = 29;
 
+bool mainHeater = false;
+bool kitchenHeater = false;
+bool firstLivingRoomHeater = false;
+bool officeHeater = false;
+bool secondLivingRoomHeater = false;
+bool firstBedroomHeater = false;
+bool secondBedroomHeater = false;
+bool waterHeater = false;
+
 EthernetClient client;
 
 /*volatile int carWatts = 0;
@@ -99,19 +108,40 @@ void changeHeater(JsonObject& root)
   const char * heater = root["heater"].asString();
   
   if(String(heater) == "kitchenHeater")
+  {
     digitalWrite(kitchenHeaterPin, status);
+    kitchenHeater = status;
+  }
   else if(String(heater) == "firstLivingRoomHeater")
+  {
     digitalWrite(firstLivingRoomHeaterPin, status);
+    firstLivingRoomHeater = status;
+  }
   else if(String(heater) == "officeHeater")
+  {
     digitalWrite(officeHeaterPin, status);
+    officeHeater = status;
+  }
   else if(String(heater) == "secondLivingRoomHeater")
+  {
     digitalWrite(secondLivingRoomHeaterPin, status);
+    secondLivingRoomHeater = status;
+  }
   else if(String(heater) == "firstBedroomHeater")
+  {
     digitalWrite(firstBedroomHeaterPin, status);
+    firstBedroomHeater = status;
+  }
   else if(String(heater) == "secondBedroomHeater")
+  {
     digitalWrite(secondBedroomHeaterPin, status);
+    secondBedroomHeater = status;
+  }
   else if(String(heater) == "waterHeater")
+  {
     digitalWrite(waterHeaterPin, status);
+    waterHeater = status;
+  }
 }
 
 void proccessMessage(String message)
@@ -122,12 +152,39 @@ void proccessMessage(String message)
   message.toCharArray(jsonMessage, 200);
   
   JsonObject& root = jsonBuffer.parseObject(jsonMessage);
-  
-  if(String(root["path"].asString()) == "/changeHeater")
+  String path = root["path"].asString();
+
+  if(path == "/changeHeater")
   {
     changeHeater(root);
   }
- }
+  else if(path == "/ping")
+  {
+    sendPing();
+  }
+}
+
+void sendPing()
+{
+  const int BUFFER_SIZE = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(7);
+  StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
+  JsonObject& ping = jsonBuffer.createObject();
+
+  ping["path"] = "/ping";
+  ping["ready"] = true;
+
+  JsonObject& heaters = ping.createNestedObject("heater");
+  heaters["kitchen"] = kitchenHeater;
+  heaters["firstLivingRoom"] = firstLivingRoomHeater;
+  heaters["office"] = officeHeater;
+  heaters["secondLivingRoom"] = secondLivingRoomHeater;
+  heaters["firstBedroom"] = firstBedroomHeater;
+  heaters["secondBedroom"] = secondBedroomHeater;
+  heaters["waterHeater"] = waterHeater;
+
+  ping.printTo(client);
+  client.println('\0');
+}
 
 /*void verifyWatts()
 {

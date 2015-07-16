@@ -5,6 +5,18 @@ function set(name, status)
 
 if (Meteor.isClient) {
 
+Template.content.helpers({
+  status: function()
+  {
+    return JSON.stringify(Status.findOne());
+  },
+  lastWatts: function()
+  {
+    var w = Watts.find().fetch();
+    return w[w.length - 1].watts;
+  }
+});
+
   Template.content.events({
     'click #cuisine_on': function () {
       set('kitchenHeater', 'on');
