@@ -12,10 +12,13 @@ byte ip[] = { 192, 168, 0, 75 };
 byte const server[] = { 192, 168, 0, 50 };
 int const serverPort = 3005;
 
-volatile int const carWattsPin = 20;
+int const carWattsPin = 20;
 int const carWattsInterrupt = 3; // Interrupt id for dp 20 is 3
-volatile int const globalWattsPin = 21;
+int const globalWattsPin = 21;
 int const globalWattsInterrupt = 2; // Interrupt id for dp 21 is 2
+
+volatile int carWatts = 0;
+volatile int globalWatts = 0;
 
 int const mainHeaterPin = 22;
 int const kitchenHeaterPin = 23;
@@ -39,6 +42,7 @@ EthernetClient client;
 
 void setup()
 {
+  Serial2.begin(115200);
   Ethernet.begin(mac, ip);
 
   pinMode(carWattsPin, INPUT_PULLUP);
@@ -46,7 +50,6 @@ void setup()
   attachInterrupt(carWattsInterrupt, incrementCarWattsCounter, FALLING);
   attachInterrupt(globalWattsInterrupt, incrementGlobalWattsCounter, FALLING);
 
-  pinMode(mainHeaterPin, OUTPUT);
   pinMode(kitchenHeaterPin, OUTPUT);
   pinMode(firstLivingRoomHeaterPin, OUTPUT);
   pinMode(officeHeaterPin, OUTPUT);
@@ -61,9 +64,40 @@ void setup()
 void loop()
 {
   delay(20);
-  verifyConnection();
 
   verifyNewMessages();
+
+  verifyWatts();
+
+  verifyCarTerminal();
+}
+
+void verifyCarTerminal()
+{
+  if(!Serial2.available())
+    return;
+
+  String message;
+
+  while(Serial2.available())
+  {
+    char letter = Serial2.read();
+
+    if(letter == 0x0D) // \r
+    {
+      break;
+    }
+
+    message += letter;
+  }
+
+  verifyConnection();
+
+  if(!client)
+    return;
+
+  client.print(message);
+  client.println('\0');
 }
 
 void verifyConnection()
@@ -77,6 +111,9 @@ void verifyConnection()
 
 void verifyNewMessages()
 {
+  if(!client.available())
+    return;
+
   String receivedMessage;
 
   while(client.available())
@@ -91,7 +128,11 @@ void verifyNewMessages()
     receivedMessage += letter;
   }
 
+  verifyConnection();
   proccessMessage(receivedMessage);
+
+  if(client.available())
+    verifyNewMessages();
 }
 
 void proccessMessage(String message)
@@ -111,6 +152,18 @@ void proccessMessage(String message)
   else if(path == "/ping")
   {
     sendPing();
+  }
+  else if(path == "/carTerminal/print")
+  {
+    printToCarTerminal(root);
+  }
+}
+
+void printToCarTerminal(JsonObject& root)
+{
+  if(root.containsKey("content"))
+  {
+    Serial2.print(root["content"].asString());
   }
 }
 
@@ -158,7 +211,7 @@ void changeHeater(JsonObject& root)
 
 void sendPing()
 {
-  const int BUFFER_SIZE = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(7);
+  const int BUFFER_SIZE = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(10);
   StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
   JsonObject& ping = jsonBuffer.createObject();
 
@@ -174,7 +227,48 @@ void sendPing()
   heaters["secondBedroom"] = secondBedroomHeater;
   heaters["waterHeater"] = waterHeater;
 
+  verifyConnection();
+
+  if(!client)
+    return;
+
   ping.printTo(client);
+  client.println('\0');
+}
+
+void verifyWatts()
+{
+  noInterrupts();
+    const int global = globalWatts; globalWatts = 0;
+    const int car = carWatts; carWatts = 0;
+  interrupts();
+
+  if(global != 0)
+  {
+    addTicks("global", global);
+  }
+
+  if(car != 0)
+  {
+    addTicks("car", car);
+  }
+}
+
+void addTicks(const String &type, const int ticks)
+{
+  const int BUFFER_SIZE = JSON_OBJECT_SIZE(3);
+  StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
+  JsonObject& root = jsonBuffer.createObject();
+  root["path"] = "/watts/addTick";
+  root["type"] = type.c_str();
+  root["watts"] = ticks;
+
+  verifyConnection();
+
+  if(!client)
+    return;
+
+  root.printTo(client);
   client.println('\0');
 }
 
@@ -185,7 +279,7 @@ void incrementCarWattsCounter()
   if(digitalRead(carWattsPin) != LOW)
     return;
     
-  addTicks("car", 1);
+  carWatts += 1;
 }
 
 void incrementGlobalWattsCounter()
@@ -193,23 +287,7 @@ void incrementGlobalWattsCounter()
   if(digitalRead(globalWattsPin) != LOW)
     return;
     
-  addTicks("global", 1);
-}
-
-inline void addTicks(const String &type, const int ticks)
-{
-  if(!client)
-    return;
-
-  const int BUFFER_SIZE = JSON_OBJECT_SIZE(3);
-  StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
-  JsonObject& root = jsonBuffer.createObject();
-  root["path"] = "/watts/addTick";
-  root["type"] = type.c_str();
-  root["watts"] = ticks;
-
-  root.printTo(client);
-  client.println('\0');
+  globalWatts += 1;
 }
 
 

@@ -1,0 +1,84 @@
+<template name="Home">
+
+<div class="col-lg-12">
+	<h1 class="page-header">
+		Dashboard
+	</h1>
+
+	{{> HeatersStatusEmbeeded }}
+
+	{{> WattsUse }}
+
+	{{> ArduinoCardStatusEmbeeded }}
+
+</div>
+
+</template>
+
+<template name="WattsUse">
+
+	<div class="col-lg-8">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<i class="fa fa-fire fa-fw"></i> Watts
+			</div>
+
+			<div class="panel-body">
+				<div id="watts-chart">
+					{{line}}
+				</div>
+			</div>
+		</div>
+	</div>
+
+</template>
+
+<template name="HeatersStatusEmbeeded">
+
+	<div class="col-lg-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<i class="fa fa-fire fa-fw"></i> Heaters status
+			</div>
+
+			<div class="panel-body">
+				<div class="row">
+					{{#each heaters}}
+						{{> HeaterStatus }}
+					{{/each}}
+				</div>
+			</div>
+		</div>
+	</div>
+
+</template>
+
+<template name="HeaterStatus">
+	<div class="col-lg-2">
+ 		<span style="opacity: 0.87; font-size:1.3em;">{{ name }}</span><br>
+ 		{{#if status}}
+ 			<span style="font-weight: bold; color: green;">ON</span>
+ 		{{else}}
+ 			<span style="font-weight: bold; color: red;">OFF</span>
+ 		{{/if}}
+ 	</div>
+</template>
+
+<template name="ArduinoCardStatusEmbeeded">
+
+	<div class="col-lg-4">
+		<div class="panel panel-default">
+            <div class="panel-heading">
+                <i class="fa fa-terminal fa-fw"></i> Arduino card
+            </div>
+
+	        <div class="panel-body">
+	        <p>
+	        	{{{ arduinoStatus }}}<br>
+	        	Latency: {{ arduinoPing }} ms
+	        </p>
+	        </div>
+        </div>
+    </div>
+
+</template>

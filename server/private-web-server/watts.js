@@ -5,7 +5,7 @@
 
 var WattsHistory = require('../models/wattshistory.js');
 
-var ticks = {};
+var ticks = { global: 0, car: 0};
 
 function route(datas, client)
 {
@@ -15,7 +15,6 @@ function route(datas, client)
 	}
 
 	ticks[datas.type] += parseInt(datas.watts);
-	client.write('' + ticks[datas.type]);
 }
 
 function init()
@@ -24,12 +23,9 @@ function init()
 	{
 		for(var type in ticks)
 		{
-			if(ticks[type] !== 0)
-			{
-				WattsHistory.createEntry(ticks[type], type);
-				console.log((ticks[type] + ' for ' + type + ' saved.').blue);
-				ticks[type] = 0;
-			}
+			WattsHistory.createEntry(ticks[type], type);
+			console.log((ticks[type] + ' for ' + type + ' saved.').blue);
+			ticks[type] = 0;
 		}
 	}, 30000);
 }

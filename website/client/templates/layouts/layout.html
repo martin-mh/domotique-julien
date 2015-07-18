@@ -1,0 +1,17 @@
+<template name="layout">
+
+	<div id="wrapper">
+
+		{{> Nav}}
+
+		<!-- Page Content -->
+        <div id="page-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    {{> yield}}
+                </div>
+            </div>
+        </div>
+	</div>
+
+</template>

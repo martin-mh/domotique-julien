@@ -40,6 +40,7 @@ function start()
 
 		c.setEncoding('utf8');
 		c.lastMessage = '';
+		c.connected = true;
 
 		sendPing();
 
@@ -50,9 +51,10 @@ function start()
 			sendPing();
 		}, 30000);
 
-		c.on('end', function()
+		c.on('close', function()
 		{
 			clearInterval(verifyPing);
+			c.connected = false;
 			console.log('Client disconnected!');
 		});
 
@@ -78,13 +80,12 @@ function start()
 
 		status.emit('ready', address, port);
 	});
-
-	server.on
 }
 
 function changeHeater(name, status)
 {
 	Heater.change(name, status, client);
+
 	setTimeout(function()
 	{
 		sendPing();
@@ -93,6 +94,9 @@ function changeHeater(name, status)
 
 function sendPing()
 {
+	if(!client.connected)
+		return;
+
 	client.write(Json.stringify({ path: '/ping' }));
 	pingLatency = Date.now();
 }

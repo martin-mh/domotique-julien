@@ -6,6 +6,9 @@ var json = require('../utils/json');
 
 function change(name, status, client)
 {
+	if(!client.connected)
+		return;
+
 	var message = {};
 
 	message.heater = name;

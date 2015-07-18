@@ -5,8 +5,25 @@
 
 var Status = require('../models/status.js');
 
+var timeout;
+
+function cardErrored()
+{
+	Status.getEntry(function(err, s)
+	{
+		s.connected = false;
+
+		s.save();
+	});
+}
+
 function route(message, pingLatency, client)
 {
+	if(timeout)
+		clearTimeout(timeout);
+
+	timeout = setTimeout(cardErrored, 50000);
+
 	Status.getEntry(function(err, s)
 	{
 		s.connected = true;
