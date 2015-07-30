@@ -25,7 +25,6 @@
 
 			<div class="panel-body">
 				<div id="watts-chart">
-					{{line}}
 				</div>
 			</div>
 		</div>
@@ -61,6 +60,7 @@
  		{{else}}
  			<span style="font-weight: bold; color: red;">OFF</span>
  		{{/if}}
+ 		<a id='switch' name="{{regularName}}" _status="{{#if status}}off{{else}}on{{/if}}" href="#!">Switch</a>
  	</div>
 </template>
 

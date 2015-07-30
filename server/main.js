@@ -31,5 +31,10 @@ PublicWebServer.status.on('changeHeater', function(name, status)
 	PrivateWebServer.changeHeater(name, status);
 });
 
+PublicWebServer.status.on('printAmpersToCar', function(ampers)
+{
+	PrivateWebServer.printAmpersToCar(ampers);
+});
+
 PrivateWebServer.start();
 PublicWebServer.start();

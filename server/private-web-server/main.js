@@ -7,6 +7,7 @@ var status = new EventEmitter();
 var Ping = require('./ping.js'); var pingLatency; // Date
 var Watts = require('./watts.js');
 var Heater = require('./heater.js');
+var Car = require('./car.js');
 
 var client;
 
@@ -92,6 +93,11 @@ function changeHeater(name, status)
 	}, 500);
 }
 
+function printAmpersToCar(ampers)
+{
+	Car.printAmpersToCar(ampers, client);
+}
+
 function sendPing()
 {
 	if(!client.connected)
@@ -101,4 +107,4 @@ function sendPing()
 	pingLatency = Date.now();
 }
 
-module.exports = { start, status, changeHeater };
+module.exports = { start, status, changeHeater, printAmpersToCar };

@@ -14,9 +14,18 @@ function setHeaterStatus(req, res)
 	status.emit('changeHeater', name, _status);
 }
 
+function printAmpersToCar(req, res)
+{
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	res.send('ok');
+
+	status.emit('printAmpersToCar', req.headers.ampers);
+}
+
 function start()
 {
 	expressApp.get('/setHeaterStatus/:name/:status', setHeaterStatus);
+	expressApp.post('/printAmpersToCar', printAmpersToCar);
 
 	var server = expressApp.listen(3006, function()
 	{
